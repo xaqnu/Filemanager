@@ -28,23 +28,25 @@ func (c *Clipboard) push(entry Entry) {
 	*c = append(*c, entry)
 }
 
-func (c *Clipboard) pop() Entry {
+func (c *Clipboard) pop() (Entry, error) {
+	if len(*c)==0 {return Entry{},errors.New("atempted to pop empty slice")}
 	last := (*c)[len(*c)-1]
 	*c = (*c)[:len(*c)-1]
-	return last
+	return last, nil
 }
 
-func (c *Clipboard) copyhandler(path string) {
+func (c *Clipboard) copyhandler(path string)  {
 	c.push(Entry{path: path, action: Copy})
 }
 
-func (c *Clipboard) cuthandler(path string) {
+func (c *Clipboard) cuthandler(path string)  {
 	c.push(Entry{path: path, action: Cut})
 }
 
 func (c *Clipboard) pastehandler (path string) error {
-	pastee:=c.pop()
-	err:=filesystemcopy(pastee.path, path)
+	pastee, err:=c.pop()
+	if err!= nil {log.Print("atempted to paste but there was nothing to paste") }
+	err=filesystemcopy(pastee.path, path)
 	if err !=nil {return err}
 	if pastee.action==Cut{
 		err=os.RemoveAll(pastee.path)
